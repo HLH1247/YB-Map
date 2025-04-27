@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>宜宾市地点导航图</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        .map-container {
+            position: relative;
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .map-image {
+            width: 100%;
+            display: block;
+        }
+        .location-marker {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background-color: #4CAF50;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            z-index: 10;
+            box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.3);
+        }
+        .location-marker::after {
+            content: attr(data-number);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .info-window {
+            position: absolute;
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 100;
+            max-width: 250px;
+            display: none;
+        }
+        .info-window h3 {
+            margin-top: 0;
+            margin-bottom: 8px;
+        }
+        .nav-button {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            text-decoration: none;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        .close-button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="map-container">
+        <!-- 替换为你的实际图片路径 -->
+        <img src="YiBin.jpg" alt="宜宾市地图" class="map-image" id="mapImage">
+        
+        <!-- 五个地点的标记将通过JavaScript动态添加 -->
+        
+        <!-- 信息窗口模板 -->
+        <div class="info-window" id="infoWindowTemplate">
+            <button class="close-button">&times;</button>
+            <h3 id="infoTitle">地点名称</h3>
+            <p id="infoAddress">地点地址</p>
+            <a class="nav-button" id="navButton" target="_blank">导航到此处</a>
+        </div>
+    </div>
+
+    <script>
+        // 五个地点的数据
+        const locations = [
+            {
+                name: "华侨城·纯水岸",
+                position: { x: 8.2, y: 75.5 }, // 根据图片调整
+                address: "宜宾市叙州区",
+                coordinates: "28.7673,104.6436" // 纬度,经度
+            },
+            {
+                name: "华侨城天鹅堡(航天路北段)",
+                position: { x: 69.1, y: 19.8 },
+                address: "航天路北段",
+                coordinates: "28.7665,104.6442"
+            },
+            {
+                name: "华侨城宜宾天鹅堡2期(华彩路)",
+                position: { x: 79.2, y: 17.5 },
+                address: "华彩路",
+                coordinates: "28.7638,104.6428"
+            },
+            {
+                name: "叙州区长江公馆(下渡口路)",
+                position: { x: 24.0, y: 51.6 },
+                address: "下渡口路",
+                coordinates: "28.7659,104.6325"
+            },
+            {
+                name: "叙州区宜宾江屿山(航天路北段西)",
+                position: { x: 69.1, y: 51.6 },
+                address: "航天路北段西",
+                coordinates: "28.7727,104.6475"
+            }
+        ];
+
+        // 等待DOM加载完成
+        document.addEventListener('DOMContentLoaded', function() {
+            const mapContainer = document.querySelector('.map-container');
+            const mapImage = document.getElementById('mapImage');
+            const infoWindowTemplate = document.getElementById('infoWindowTemplate');
+            
+            // 创建信息窗口（从模板克隆）
+            const infoWindow = infoWindowTemplate.cloneNode(true);
+            infoWindow.id = 'infoWindow';
+            mapContainer.appendChild(infoWindow);
+            
+            // 获取关闭按钮和导航按钮
+            const closeButton = infoWindow.querySelector('.close-button');
+            const navButton = infoWindow.querySelector('.nav-button');
+            
+            // 关闭信息窗口
+            closeButton.addEventListener('click', function() {
+                infoWindow.style.display = 'none';
+            });
+            
+            // 为每个地点创建标记
+            locations.forEach((location, index) => {
+                const marker = document.createElement('div');
+                marker.className = 'location-marker';
+                marker.setAttribute('data-number', (index + 1).toString());
+                
+                // 设置标记位置（百分比）
+                marker.style.left = `${location.position.x}%`;
+                marker.style.top = `${location.position.y}%`;
+                
+                // 点击标记显示信息窗口
+                marker.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    
+                    // 更新信息窗口内容
+                    infoWindow.querySelector('#infoTitle').textContent = location.name;
+                    infoWindow.querySelector('#infoAddress').textContent = location.address;
+                    navButton.href = `https://uri.amap.com/navigation?to=${location.coordinates.split(',').reverse().join(',')},${encodeURIComponent(location.name)}&mode=car`;
+                    navButton.textContent = `导航到${location.name}`;
+                    
+                    // 定位信息窗口
+                    const markerRect = marker.getBoundingClientRect();
+                    const containerRect = mapContainer.getBoundingClientRect();
+                    
+                    infoWindow.style.left = `${markerRect.left - containerRect.left}px`;
+                    infoWindow.style.top = `${markerRect.bottom - containerRect.top + 10}px`;
+                    infoWindow.style.display = 'block';
+                });
+                
+                mapContainer.appendChild(marker);
+            });
+            
+            // 点击地图其他位置关闭信息窗口
+            mapContainer.addEventListener('click', function() {
+                infoWindow.style.display = 'none';
+            });
+        });
+    </script>
+</body>
+</html>
